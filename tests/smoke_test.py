@@ -59,12 +59,13 @@ def main() -> list[dict]:
         if not isinstance(code, str) or not isinstance(expected, bool):
             raise TypeError("Each sample must have string code and a boolean expectation")
 
-        d3_score = detect([SQL_INJECTION_CHECK], code)[SQL_INJECTION_CHECK]
+        scores, d3_seconds = detect([SQL_INJECTION_CHECK], code)
+        d3_score = scores[SQL_INJECTION_CHECK]
         if not isinstance(d3_score, (int, float)):
             raise TypeError(f"Expected a numeric D3 score, got {type(d3_score).__name__}")
 
         d3_vulnerable = d3_score >= DETECTION_THRESHOLD
-        explanation = explain(code, SQL_INJECTION_CHECK)
+        explanation, qwen_seconds = explain(code, SQL_INJECTION_CHECK)
         agrees = d3_vulnerable == explanation.is_vulnerable
         matches_expectation = d3_vulnerable == expected
 
@@ -74,6 +75,8 @@ def main() -> list[dict]:
             "expected": expected,
             "d3_vulnerable": d3_vulnerable,
             "passed": matches_expectation,
+            "d3_seconds": d3_seconds,
+            "qwen_seconds": qwen_seconds,
         })
 
         print(f"\n{sample['name']}")
@@ -86,6 +89,7 @@ def main() -> list[dict]:
         print(f"  Qwen says vulnerable: {explanation.is_vulnerable}")
         print(f"  D3 and Qwen agree: {agrees}")
         print(f"  D3 matches expectation: {matches_expectation}")
+        print(f"  D3 took {d3_seconds:.1f}s, Qwen took {qwen_seconds:.1f}s")
         print(f"  Qwen explanation: {explanation.Explaination}")
         print(f"  Qwen suggested fix:\n{explanation.fixed_code}")
 
