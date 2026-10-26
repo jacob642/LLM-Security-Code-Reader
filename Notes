@@ -1,0 +1,47 @@
+# So project artefact will be a LLM security code corrector/reviewer.
+#Questions to answer:
+# 1. How can LLMs be used to identify security vulnerabilities in source code?
+# 2. How can LLMs be integrated into existing code review processes to enhance security?
+# 3. What are the limitations and challenges of using LLMs for secure code review, and how can they be addressed?
+# 4. How can the performance of LLM-based secure code review be evaluated and compared to traditional static analysis tools?
+# 5. Static analysis tools that I can compare to are Bandit, Semgrep, Veracode.
+# 6. Compare the data between my LLM-based secure code review vs traditional static analysis. 
+# Then compare my data with the data from to the research papars.
+# Edit: Maybe at the start of use, there is an option to say what your aim of execution is.
+# 2. Map API endpoints against authorization frameworks to flag missing access
+#    control checks.
+# Identifies vulnerabilities within the code.
+# The LLM, much like a normal code corrector, will notify of a problem and
+# suggest a fix.
+# The LLM must then explain why. Second, at every mistake, explain that the root
+# cause could be deeper at an infrastructure level; this is something to think
+# about, including that the scanner can do.
+# Tools to use (could change): DeepSeek, Python, Ollama. Their respective
+# libraries and further development may be needed.
+# References:
+# - https://arxiv.org/abs/2407.12241
+# - https://arxiv.org/html/2401.16310v5
+# - https://arxiv.org/abs/2308.14434
+# - https://pdf.sciencedirectassets.com/271629/1-s2.0-S0164121223X00065/
+#   1-s2.0-S0164121223001474/main.pdf
+# LLM-Based Secure Code Reviewer: Develop and evaluate a secure code-review
+# system that uses Large Language Models (LLMs) to identify potential security
+# vulnerabilities and insecure programming practices in source code. The project
+# can investigate the accuracy, limitations, and practical usefulness of
+# LLM-based code review compared with traditional static analysis tools.
+
+# Start of production 
+#1. Needs to read what is being said/ needs to read when prompted - this is a seperate file
+#2. Needs to connect what is being said to the LLM then sends out the out 
+#3. needs to log whats happening, failures either on the LLM side or reading.
+#4. Needs to be able to ask on the infrastructure side
+#5. Main file will keep deployment.
+
+
+Date - 26/10/2026
+
+Done - Installed and tested the LLMs that will be used. They need more tinkering to be accurate, as Qwen gave a fix that would not work on SQLite (it used the %s placeholder but SQLite needs ?), so I need to handle that somewhere. The test itself was successful. d3 gave a high score for the SQL injection example, and Qwen gave an explanation and a fix when prompted separately. The two are not linked together yet.
+
+Next - Put the prompts in prompts.py in a JSON format and test that it works. Then feed them through llm_client.py to check they reach the LLMs properly. d3 should return a score that is turned into a yes or no using a threshold. If it is yes, the code should be sent to Qwen 2.5 to explain the vulnerability.
+
+Decisions - Paid or cloud-hosted LLMs cost money or send code off my machine, and DeepSeek reasoning models are likely to be too slow on a machine with no dedicated GPU and 16GB RAM. As such d3 and Qwen 2.5 will be used. Can write about this in the report. These two LLMs will be used in conjuction with each other.  D3 will decide whether its a vulnability, this will then be sent to Qwen where it will decide if its a vulnability and explain the decision.
