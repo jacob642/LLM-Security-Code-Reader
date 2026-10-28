@@ -3,7 +3,7 @@ import sys
 from src.llm_client import detect, explain
 from src.prompts import questions
 
-
+# Run smoke-test samples through both models and compare their results with expected findings.
 SQL_INJECTION_CHECK = "SQL injection (CWE-89)"
 DETECTION_THRESHOLD = 0.5
 
@@ -47,10 +47,10 @@ def run_command(user_input):
     },
 ]
 
-
+# Validate the detector prompt, run all samples through the models, and collect their results.
 def main() -> list[dict]:
     results = []
-    if SQL_INJECTION_CHECK not in questions:
+    if SQL_INJECTION_CHECK not in questions: 
         raise KeyError(f"Missing detector prompt: {SQL_INJECTION_CHECK}")
 
     for sample in SAMPLES:
@@ -68,7 +68,7 @@ def main() -> list[dict]:
         explanation, qwen_seconds = explain(code, SQL_INJECTION_CHECK)
         agrees = d3_vulnerable == explanation.is_vulnerable
         matches_expectation = d3_vulnerable == expected
-
+        # Store each sample's detection result so it can be reported and checked after the run.
         results.append({
             "name": sample["name"],
             "score": d3_score,
@@ -78,7 +78,7 @@ def main() -> list[dict]:
             "d3_seconds": d3_seconds,
             "qwen_seconds": qwen_seconds,
         })
-
+        # Print the detector, explanation model, timing, and comparison results for this sample.
         print(f"\n{sample['name']}")
         print(f"  Expected SQL injection: {expected}")
         print(f"  D3 score: {d3_score}")
@@ -96,7 +96,7 @@ def main() -> list[dict]:
     print(results)
     return results
 
-
+# Report failed samples and exit with a failure status when any expectations do not match.
 def failure(results: list[dict]) -> None:
     failed = [r for r in results if not r["passed"]]
     for r in failed:

@@ -1,0 +1,16 @@
+# config.yaml
+
+models:
+  detector: d3
+  explainer: qwen2.5-coder:7b
+
+detection:
+  threshold: 0.5
+
+experiment:
+  runs_per_sample: 3
+
+paths:
+  raw_data: data/raw
+  processed_data: data/processed
+  results: results

@@ -1,14 +1,9 @@
-## this file will  detect the vulnabiltiy,, explain whats happening, models together so D3 sends the vulnability if true to Qwen,
-#imports
+# This module uses D3 to detect vulnerabilities and Qwen to explain them.
+
 import ollama
 from src.prompts import questions, EXPLAIN_PROMPT
 from pydantic import BaseModel
 import time
-
-import ollama
-from pydantic import BaseModel
-
-from src.prompts import questions, EXPLAIN_PROMPT
 
 
 class Explanation(BaseModel):
@@ -17,7 +12,7 @@ class Explanation(BaseModel):
     Explaination: str
     fixed_code: str
 
-
+# Use D3 to score the supplied code against each requested CWE, and time the request.
 def detect(cwes, code):
     start = time.perf_counter()
     response = ollama.systemone(
@@ -29,7 +24,7 @@ def detect(cwes, code):
     scores = {c: response.answers[c].noul for c in cwes}
     return scores, seconds
 
-
+# Use Qwen to explain detected issues and return the explanation as structured JSON.
 def explain(code, cwes):
     start = time.perf_counter()
     response = ollama.chat(
