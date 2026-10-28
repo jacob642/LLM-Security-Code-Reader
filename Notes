@@ -65,10 +65,9 @@ Problems found
 Next (each task has a done-when)
 1. Time each model call. Done when the experiment log has seconds per sample for each stage.
 2. Run each sample three times. Done when the log shows whether d3 scores and Qwen answers change between runs.
-3. Run Bandit and Semgrep on the same four samples. Done when their results sit next to d3's in the log.
-4. Add Qwen checks: does the fix parse as Python and does Qwen name the right weakness. Done when failures from Qwen show up separately in the report.
-5. Move the prompts into a JSON format and load them through llm_client.py. Done when the d3 questions load from the file and a score comes back.
-6. Link the two stages in reviewer.py so only flagged code reaches Qwen. Done when a safe sample never gets sent to Qwen.
+3. Add Qwen checks: does the fix parse as Python and does Qwen name the right weakness. Done when failures from Qwen show up separately in the report.
+4. Move the prompts into a JSON format and load them through llm_client.py. Done when the d3 questions load from the file and a score comes back.
+5. Link the two stages in reviewer.py so only flagged code reaches Qwen. Done when a safe sample never gets sent to Qwen.
 
 Decisions
 - Threshold set at 0.5 for now. To be tuned later using more samples.
@@ -79,3 +78,44 @@ Open questions
 - Where should the model names live so I can swap models for comparison?
 - How should the d3 and Qwen prompts be worded, and how should user input change them?
 - What should happen if the user does not say which vulnerabilities to check?
+
+Date - 28/10/2026
+
+Done
+1. Added timing to both model calls. Each sample now stores how long d3 and Qwen took. On this run (five samples, CPU only) d3 averaged about 6.4s (range 5.7 to 7.3) and Qwen about 27s (range 18.5 to 34.3).
+2. Added comments to the code and ran spelling checks.
+3. Added a JSON file that the smoke test results are written to (storing() in parser.py).
+4. Looked at how Qwen's output changes between runs. The explanation follows the same pattern each time but the wording is different. The suggested fix is also different in some cases, because it depends on the explanation. Examples: ![Example of a suggested fix that differs between runs](image.png) ![Second example of a differing fix](image-1.png)
+5. Tested different Qwen prompts.
+   - A long, in-depth prompt stopped the output and froze, so I went back to a shorter one.
+   - This version asked Qwen to name the language or database the fix targets. It led to unrelated imports (HTML and SQLite) appearing in the fixes:
+     EXPLAIN_PROMPT = (
+         "A scanner suspects this code has {cwes}. Decide whether it is really "
+         "vulnerable. If it is not, set is_vulnerable to false and explain why. "
+         "If it is, quote the vulnerable line, explain the root cause, and give a "
+         "fixed version of the whole function without changing what it does. "
+         "Identify the programming language or database technology targeted by the fix "
+         "(for example, 'SQLite/Python').\n\nCode:\n{code}"
+     )
+   - The current prompt tells Qwen not to assume the scanner is right and to say what is missing if there is not enough evidence. I have not measured whether it is more accurate.
+6. Gave Qwen a false positive (the safe subprocess sample, shell=False) and it correctly set is_vulnerable to false and explained why. ![Qwen correctly rejecting a false positive](image-2.png)
+
+Problems found
+- Qwen still writes an explanation and a fixed version when there is no sign of a vulnerability. The smoke test sends every sample to Qwen and the output format requires a fix.
+- d3 scored the ReDoS sample at 0.015 and missed it, while Qwen flagged it.
+- My expected values still describe SQL injection only, but the question is now "is there a sign of any vulnerability". The subprocess sample (shell=True) is a real vulnerability and d3 was right to flag it, so the FAILED result came from the expectation being wrong. The ReDoS sample passed because its expectation was wrong too. Both need correcting.
+- The SQL fix used the %s placeholder again, which does not work with SQLite.
+- The JSON file is overwritten each run, so I cannot compare runs yet.
+
+Next
+1. Save each run to its own timestamped file in results with the model names, threshold and prompt version. Done when two runs can be compared side by side.
+2. Copy the timing figures into the experiment log. Done when there are seconds per stage per sample.
+3. Link the two stages in reviewer.py so only flagged code reaches Qwen. Done when a safe sample never gets sent to Qwen.
+
+Decisions
+- Changed the d3 question from SQL injection only to any vulnerability, so samples of other types and languages can be tested.
+- Using the shorter Qwen prompt, because the long one froze.
+
+Open questions
+- Should d3 decide whether Qwen runs at all? Qwen takes about four times as long as d3, so skipping it for code d3 calls safe would save a lot of time. But d3 missed the ReDoS sample and Qwen caught it, so skipping would lose that. Options to test are gating at 0.5, gating at a lower threshold, or always running Qwen.
+- How will a user input the code they want to get checked. 

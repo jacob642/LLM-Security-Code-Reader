@@ -1,0 +1,77 @@
+[
+  {
+    "name": "Vulnerable SQL concatenation",
+    "score": 0.9986499544945597,
+    "expected": true,
+    "d3_vulnerable": true,
+    "passed": true,
+    "d3_seconds": 7.271522099967115,
+    "qwen_seconds": 27.23696920007933,
+    "qwen_explanation": {
+      "vulnerable_line": "query = \"SELECT * FROM users WHERE name = '\" + name + \"'\"",
+      "is_vulnerable": true,
+      "explanation": "The code is vulnerable to SQL Injection because it directly concatenates user input (name) into the SQL query string. This allows an attacker to manipulate the query by providing specially crafted input, which could potentially lead to unauthorized access or data manipulation.",
+      "fixed_code": "def get_user(db, name):\n    query = \"SELECT * FROM users WHERE name = %s\"\n    return db.execute(query, (name,))"
+    }
+  },
+  {
+    "name": "ReDOS",
+    "score": 0.015321051573270924,
+    "expected": false,
+    "d3_vulnerable": false,
+    "passed": true,
+    "d3_seconds": 6.763686199905351,
+    "qwen_seconds": 34.2997818000149,
+    "qwen_explanation": {
+      "vulnerable_line": "let match = r.test(req.params.id);",
+      "is_vulnerable": true,
+      "explanation": "The vulnerability arises because the regular expression used to test the input `req.params.id` is vulnerable to a Regular Expression Denial of Service (ReDoS) attack. The regex `([a-z]+)+$` can be exploited when the input string is crafted to trigger exponential backtracking. An attacker could use a string like `aaaaaaaaaaaaaaaaaaaaaaa...` (many 'a's) to cause the regex engine to consume a significant amount of computational resources. This could potentially lead to a denial of service on the server.",
+      "fixed_code": "const express = require('express');\nconst router = express.Router();\n\nrouter.get('/tstMe', (req, res) => {\n    var r = /^(?!.*[a-z]{1000})[a-z]+$/;\n\n    let match = r.test(req.params.id);\n    res.send(match);\n});\n\nmodule.exports = router;"
+    }
+  },
+  {
+    "name": "OS Command Injection",
+    "score": 0.002395844027311961,
+    "expected": false,
+    "d3_vulnerable": false,
+    "passed": true,
+    "d3_seconds": 5.811911500059068,
+    "qwen_seconds": 27.565506200073287,
+    "qwen_explanation": {
+      "vulnerable_line": "result = subprocess.run([\"uptime\"], capture_output=True, text=True, shell=False)",
+      "is_vulnerable": false,
+      "explanation": "The code uses `subprocess.run()` with `shell=False`, which prevents command injection. There are no user inputs that could be injected into the command. The function is designed to retrieve system uptime and is not vulnerable to the types of vulnerabilities commonly associated with `subprocess.run()` when used with `shell=False`. The `shell=False` argument explicitly disables the shell, further enhancing the security of the function.",
+      "fixed_code": "import subprocess\ndef get_system_uptime():\n    result = subprocess.run(\n        [\"uptime\"],\n        capture_output=True,\n        text=True,\n        shell=False\n    )\n    return result.stdout"
+    }
+  },
+  {
+    "name": "Different vulnerability: subprocess with user input",
+    "score": 0.9813109014569464,
+    "expected": false,
+    "d3_vulnerable": true,
+    "passed": false,
+    "d3_seconds": 5.685653500026092,
+    "qwen_seconds": 18.479664500104263,
+    "qwen_explanation": {
+      "vulnerable_line": "subprocess.run(\"echo \" + user_input, shell=True)",
+      "is_vulnerable": true,
+      "explanation": "This code is vulnerable to Command Injection. The `shell=True` parameter allows the `user_input` to be executed as a shell command, which can be exploited if `user_input` contains malicious code.",
+      "fixed_code": "def run_command(user_input):\n    subprocess.run(user_input, shell=False, check=True)"
+    }
+  },
+  {
+    "name": "hashtag testy west ooooooooooooo",
+    "score": 0.7297991339090871,
+    "expected": true,
+    "d3_vulnerable": true,
+    "passed": true,
+    "d3_seconds": 6.34037630003877,
+    "qwen_seconds": 28.126042500021867,
+    "qwen_explanation": {
+      "vulnerable_line": "scanf(\"%s\", name);",
+      "is_vulnerable": true,
+      "explanation": "The use of `scanf` with the `%s` format specifier is vulnerable to buffer overflow because it does not check the length of the input string, allowing an attacker to input a string longer than 64 characters, which will overflow the buffer. This can lead to undefined behavior, potential security vulnerabilities, or even a crash.",
+      "fixed_code": "int _tmain(int argc, _TCHAR* argv[]) {\n\tchar name[64];\n\tprintf(\"Enter your name: \");\n\tscanf_s(\"%63s\", name, (unsigned)_countof(name));\n\tSanitize(name);\n\tprintf(\"Welcome, %s!\", name);\n\treturn 0;\n}"
+    }
+  }
+]

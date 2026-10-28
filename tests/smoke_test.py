@@ -1,10 +1,11 @@
 import sys
-
 from src.llm_client import detect, explain
 from src.prompts import questions
+from src.parser import storing
+
 
 # Run smoke-test samples through both models and compare their results with expected findings.
-SQL_INJECTION_CHECK = "SQL injection (CWE-89)"
+SQL_INJECTION_CHECK = "is there a sign of any vulnerability"
 DETECTION_THRESHOLD = 0.5
 
 SAMPLES = [
@@ -18,33 +19,67 @@ def get_user(db, name):
 """,
     },
     {
-        "name": "Safe parameterised SQL",
+        "name": "ReDOS",
         "expected": False,
         "code": """\
-def get_user(db, name):
-    query = "SELECT * FROM users WHERE name = ?"
-    return db.execute(query, (name,))
+const express = require('express');
+const router = express.Router()
+
+
+router.get("/tstMe", (req, res) => { 
+    var r = /([a-z]+)+$/;
+
+    let match = r.test(req.params.id);
+    res.send(match)
+    
+});
+
+
+module.exports = router
 """,
     },
     {
-        "name": "Safe hardcoded SQL",
+        "name": "OS Command Injection",
         "expected": False,
         "code": """\
-def get_active_users(db):
-    query = "SELECT id, name FROM users WHERE active = 1"
-    return db.execute(query)
+import subprocess
+
+def get_system_uptime():
+    result = subprocess.run(
+        ["uptime"],
+        capture_output=True,
+        text=True,
+        shell=False
+    )
+    return result.stdout
 """,
     },
     {
         "name": "Different vulnerability: subprocess with user input",
         "expected": False,
         "code": """\
-import subprocess
 
 def run_command(user_input):
     subprocess.run("echo " + user_input, shell=True)
 """,
     },
+    {
+        "name": "hashtag testy west ooooooooooooo",
+        "expected": True,
+        "code": """\
+     int _tmain(int argc, _TCHAR* argv[])
+{
+	char name[64];
+	printf("Enter your name: ");
+	scanf("%s", name);
+	Sanitize(name);
+	printf("Welcome, %s!", name);
+	return 0;
+} }   
+
+
+""",
+    },    
 ]
 
 # Validate the detector prompt, run all samples through the models, and collect their results.
@@ -77,6 +112,7 @@ def main() -> list[dict]:
             "passed": matches_expectation,
             "d3_seconds": d3_seconds,
             "qwen_seconds": qwen_seconds,
+            "qwen_explanation": explanation.model_dump(),
         })
         # Print the detector, explanation model, timing, and comparison results for this sample.
         print(f"\n{sample['name']}")
@@ -90,7 +126,7 @@ def main() -> list[dict]:
         print(f"  D3 and Qwen agree: {agrees}")
         print(f"  D3 matches expectation: {matches_expectation}")
         print(f"  D3 took {d3_seconds:.1f}s, Qwen took {qwen_seconds:.1f}s")
-        print(f"  Qwen explanation: {explanation.Explaination}")
+        print(f"  Qwen explanation: {explanation.explanation}")
         print(f"  Qwen suggested fix:\n{explanation.fixed_code}")
 
     print(results)
@@ -111,4 +147,5 @@ def failure(results: list[dict]) -> None:
 
 if __name__ == "__main__":
     results = main()
+    storing(results)
     failure(results)
